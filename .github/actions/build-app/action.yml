@@ -41,4 +41,4 @@ runs:
     - name: Compile binary
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: CGO_ENABLED=0 GOOS=linux go build -o bin/server ./cmd/server
+      run: CGO_ENABLED=0 GOOS=linux go build -o bin/server .
