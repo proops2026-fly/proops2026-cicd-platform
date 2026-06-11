@@ -1,0 +1,44 @@
+name: "Build App"
+description: "Set up Go, download dependencies, vet, test with coverage, and compile the binary"
+
+inputs:
+  go-version:
+    description: "Go version"
+    required: false
+    default: "1.23"
+  working-directory:
+    description: "Directory to run the build in"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: true
+
+    - name: Download dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: go mod download
+
+    - name: Vet (lint)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: go vet ./...
+
+    # Exclude integration tests (need live Redis) and handlers (Day 26 coverage decision).
+    - name: Test with coverage
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        go test $(go list ./... | grep -v 'tests/integration' | grep -v 'internal/handlers') \
+          -coverprofile=coverage.out
+
+    - name: Compile binary
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: CGO_ENABLED=0 GOOS=linux go build -o bin/server ./cmd/server
